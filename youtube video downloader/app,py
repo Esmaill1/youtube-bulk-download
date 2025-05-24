@@ -1,0 +1,52 @@
+import subprocess
+import os
+import sys
+import shutil
+
+def download_with_cli(url, cookies_file, output_dir=None):
+    # Check if yt-dlp is installed
+    if not shutil.which("yt-dlp"):
+        print("ERROR: yt-dlp is not installed or not in PATH.")
+        sys.exit(1)
+
+    # Check if cookies file exists
+    if not os.path.isfile(cookies_file):
+        print(f"ERROR: Cookies file not found at {cookies_file}")
+        sys.exit(1)
+
+    # Prepare command
+    cmd = [
+        "yt-dlp",
+        "--cookies", cookies_file,
+    ]
+    if output_dir:
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+        cmd += ["-P", output_dir]
+    cmd.append(url)
+
+    print("\nStarting download...\n")
+    try:
+        # Stream output line by line so yt-dlp's progress bar is visible
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        for line in process.stdout:
+            print(line, end='')  # yt-dlp already includes newlines
+        process.wait()
+        if process.returncode != 0:
+            print("\nError occurred during download.")
+        else:
+            print("\nDownload successful.")
+    except KeyboardInterrupt:
+        process.terminate()
+        print("\nDownload cancelled by user.")
+    except Exception as e:
+        print(f"\nAn unexpected error occurred: {e}")
+
+if __name__ == "__main__":
+    print("=== YouTube Video Downloader ===")
+    url = input("Enter the YouTube video URL: ").strip()
+    cookies_file = "/workspaces/youtube-bulk-download/cookies.txt"
+    output_dir = input("Enter output directory (press Enter for current directory): ").strip()
+    if output_dir == "":
+        output_dir = None
+    download_with_cli(url, cookies_file, output_dir)
